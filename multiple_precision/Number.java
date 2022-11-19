@@ -1,3 +1,5 @@
+package multiple_precision;
+
 import java.util.Random;
 
 public class Number implements Comparable<Number> {
@@ -172,6 +174,7 @@ public class Number implements Comparable<Number> {
     }
 
     public ProductRemainderPair divMod(Number other) {
+        if (other.isZero()) throw new ArithmeticException();
         if (!this._sign.equals(other._sign)) {
             ProductRemainderPair result = this.abs().divMod(other.abs());
             return new ProductRemainderPair(result.product().signReversed(), this._sign.equals(Sign.negative()) ? result.remainder().signReversed() : result.remainder());
@@ -192,157 +195,22 @@ public class Number implements Comparable<Number> {
             zeroOngoing = false;
 
             remainder = remainder.digitInserted(this._digits[DIGITS_COUNT_MAX - 1 - i]);
-            ProductRemainderPairDigit productRemainderPairDigit = remainder.divModDigit(other);
+            DigitProductRemainderPair productRemainderPairDigit = remainder.divModDigit(other);
             digits[DIGITS_COUNT_MAX - 1 - i] = productRemainderPairDigit.product();
             remainder = productRemainderPairDigit.remainder();
         }
         return new ProductRemainderPair(new Number(Sign.positive(), digits), remainder);
     }
 
-    private ProductRemainderPairDigit divModDigit(Number other) {
+    private DigitProductRemainderPair divModDigit(Number other) {
         if (!this._sign.equals(other._sign)) throw new IllegalArgumentException();
         if (this._sign.equals(Sign.negative())) return this.abs().divModDigit(other.abs());
 
         Number remainder = this;
         for (int i = 0; i < 10; i++) {
-            if (remainder.compareTo(other) < 0) return new ProductRemainderPairDigit(new Digit(i), remainder);
+            if (remainder.compareTo(other) < 0) return new DigitProductRemainderPair(new Digit(i), remainder);
             remainder = remainder.sub(other);
         }
         throw new IllegalArgumentException();
-    }
-
-    private static class Sign {
-        private final Type _type;
-    
-        private Sign(Type type) {
-            this._type = type;
-        }
-    
-        public static Sign negative() {
-            return new Sign(Type.NEGATIVE);
-        }
-    
-        public static Sign positive() {
-            return new Sign(Type.POSITIVE);
-        }
-    
-        public Sign reversed() {
-            return this.equals(Sign.negative()) ? Sign.positive() : Sign.negative();
-        }
-    
-        public boolean equals(Sign other) {
-            return this._type == other._type;
-        }
-    
-        @Override
-        public String toString() {
-            return this._type == Type.NEGATIVE ? "- " : "+ ";
-        }
-    
-        private static enum Type {
-            NEGATIVE,
-            POSITIVE
-        }
-    }
-
-    private static class Digit implements Comparable<Digit> {
-        private final byte _value;
-    
-        public Digit(int value) {
-            if (value < 0 || value > 9) throw new IllegalArgumentException();
-            this._value = (byte)value;
-        }
-    
-        public static Digit zero() {
-            return new Digit(0);
-        }
-
-        @Override
-        public int compareTo(Digit other) {
-            if (this._value < other._value) return -1;
-            if (this._value > other._value) return 1;
-            return 0;
-        }
-
-        public byte toByte() {
-            return this._value;
-        }
-    
-        @Override
-        public String toString() {
-            return Byte.toString(this._value);
-        }
-    
-        public WithCarry add(Digit other, int carry) {
-            int sum = this._value + other._value + carry;
-            int rem = sum % 10;
-            return new WithCarry(new Digit(rem < 0 ? rem + 10 : rem), (sum < 0 ? sum - 9 : sum) / 10);
-        }
-    
-        public WithCarry sub(Digit other, int carry) {
-            int diff = this._value - other._value + carry;
-            int rem = diff % 10;
-            return new WithCarry(new Digit(rem < 0 ? rem + 10 : rem), (diff < 0 ? diff - 9 : diff) / 10);
-        }
-    
-        public WithCarry mul(Digit other, int carry) {
-            int pro = this._value * other._value + carry;
-            int rem = pro % 10;
-            return new WithCarry(new Digit(rem < 0 ? rem + 10 : rem), (pro < 0 ? pro - 9 : pro) / 10);
-        }
-    
-        public static class WithCarry {
-            private final Digit _digit;
-            private final int _carry;
-    
-            public WithCarry(Digit digit, int carry) {
-                this._digit = digit;
-                this._carry = carry;
-            }
-    
-            public Digit digit() {
-                return this._digit;
-            }
-    
-            public int carry() {
-                return this._carry;
-            }
-        }
-    }
-
-    public static class ProductRemainderPair {
-        private final Number _product;
-        private final Number _remainder;
-
-        public ProductRemainderPair(Number product, Number remainder) {
-            this._product = product;
-            this._remainder = remainder;
-        }
-
-        public Number product() {
-            return this._product;
-        }
-
-        public Number remainder() {
-            return this._remainder;
-        }
-    }
-
-    private static class ProductRemainderPairDigit {
-        private final Digit _product;
-        private final Number _remainder;
-
-        public ProductRemainderPairDigit(Digit product, Number remainder) {
-            this._product = product;
-            this._remainder = remainder;
-        }
-
-        public Digit product() {
-            return this._product;
-        }
-
-        public Number remainder() {
-            return this._remainder;
-        }
     }
 }
