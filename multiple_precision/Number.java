@@ -120,10 +120,10 @@ public class Number implements Comparable<Number> {
         if (this._sign.equals(Sign.positive()) && other._sign.equals(Sign.negative())) return this.sub(other.abs());
 
         Digit[] digits = new Digit[DIGITS_COUNT_MAX];
-        Digit.WithCarry digitWithCarry = new Digit.WithCarry(null, 0);
+        int carry = 0;
         for (int i = 0; i < DIGITS_COUNT_MAX; i++) {
-            digitWithCarry = this._digits[i].add(other._digits[i], digitWithCarry.carry());
-            digits[i] = digitWithCarry.digit();
+            digits[i] = this._digits[i].add(other._digits[i], carry);
+            carry = this._digits[i].addCarry(other._digits[i], carry);
         }
         return new Number(this._sign, digits);
     }
@@ -135,10 +135,10 @@ public class Number implements Comparable<Number> {
         if (this.compareTo(other) < 0) return other.sub(this).signReversed();
 
         Digit[] digits = new Digit[DIGITS_COUNT_MAX];
-        Digit.WithCarry digitWithCarry = new Digit.WithCarry(null, 0);
+        int carry = 0;
         for (int i = 0; i < DIGITS_COUNT_MAX; i++) {
-            digitWithCarry = this._digits[i].sub(other._digits[i], digitWithCarry.carry());
-            digits[i] = digitWithCarry.digit();
+            digits[i] = this._digits[i].sub(other._digits[i], carry);
+            carry = this._digits[i].subCarry(other._digits[i], carry);
         }
         return new Number(Sign.positive(), digits);
     }
@@ -157,32 +157,18 @@ public class Number implements Comparable<Number> {
         if (other.compareTo(new Digit(1)) == 0) return this;
 
         Digit[] digits = new Digit[DIGITS_COUNT_MAX];
-        Digit.WithCarry digitWithCarry = new Digit.WithCarry(null, 0);
+        int carry = 0;
         for (int i = 0; i < DIGITS_COUNT_MAX; i++) {
-            digitWithCarry = this._digits[i].mul(other, digitWithCarry.carry());
-            digits[i] = digitWithCarry.digit();
+            digits[i] = this._digits[i].mul(other, carry);
+            carry = this._digits[i].mulCarry(other, carry);
         }
         return new Number(this._sign, digits);
     }
 
     public Number div(Number other) {
-        return this.divMod(other).product();
-    }
-
-    public Number mod(Number other) {
-        return this.divMod(other).remainder();
-    }
-
-    public ProductRemainderPair divMod(Number other) {
         if (other.isZero()) throw new ArithmeticException();
-        if (!this._sign.equals(other._sign)) {
-            ProductRemainderPair result = this.abs().divMod(other.abs());
-            return new ProductRemainderPair(result.product().signReversed(), this._sign.equals(Sign.negative()) ? result.remainder().signReversed() : result.remainder());
-        }
-        if (this._sign.equals(Sign.negative())) {
-            ProductRemainderPair result = this.abs().divMod(other.abs());
-            return new ProductRemainderPair(result.product(), this._sign.equals(Sign.negative()) ? result.remainder().signReversed() : result.remainder());
-        }
+        if (!this._sign.equals(other._sign)) return this.abs().div(other.abs()).signReversed();
+        if (this._sign.equals(Sign.negative())) return this.abs().div(other.abs());
 
         Digit[] digits = new Digit[DIGITS_COUNT_MAX];
         Number remainder = Number.zero();
@@ -195,20 +181,48 @@ public class Number implements Comparable<Number> {
             zeroOngoing = false;
 
             remainder = remainder.digitInserted(this._digits[DIGITS_COUNT_MAX - 1 - i]);
-            DigitProductRemainderPair productRemainderPairDigit = remainder.divModDigit(other);
-            digits[DIGITS_COUNT_MAX - 1 - i] = productRemainderPairDigit.product();
-            remainder = productRemainderPairDigit.remainder();
+            digits[DIGITS_COUNT_MAX - 1 - i] = remainder.divForDigit(other);
+            remainder = remainder.modForDigit(other);
         }
-        return new ProductRemainderPair(new Number(Sign.positive(), digits), remainder);
+        return new Number(Sign.positive(), digits);
     }
 
-    private DigitProductRemainderPair divModDigit(Number other) {
+    public Number mod(Number other) {
+        if (other.isZero()) throw new ArithmeticException();
+        if (this._sign.equals(Sign.negative())) return this.abs().mod(other.abs()).signReversed();
+        if (other._sign.equals(Sign.negative())) return this.abs().mod(other.abs());
+
+        Number remainder = Number.zero();
+        boolean zeroOngoing = true;
+        for (int i = 0; i < DIGITS_COUNT_MAX; i++) {
+            if (zeroOngoing && this._digits[DIGITS_COUNT_MAX - 1 - i].compareTo(Digit.zero()) == 0) continue;
+            zeroOngoing = false;
+
+            remainder = remainder.digitInserted(this._digits[DIGITS_COUNT_MAX - 1 - i]);
+            remainder = remainder.modForDigit(other);
+        }
+        return remainder;
+    }
+
+    private Digit divForDigit(Number other) {
         if (!this._sign.equals(other._sign)) throw new IllegalArgumentException();
-        if (this._sign.equals(Sign.negative())) return this.abs().divModDigit(other.abs());
+        if (this._sign.equals(Sign.negative())) return this.abs().divForDigit(other.abs());
 
         Number remainder = this;
         for (int i = 0; i < 10; i++) {
-            if (remainder.compareTo(other) < 0) return new DigitProductRemainderPair(new Digit(i), remainder);
+            if (remainder.compareTo(other) < 0) return new Digit(i);
+            remainder = remainder.sub(other);
+        }
+        throw new IllegalArgumentException();
+    }
+
+    private Number modForDigit(Number other) {
+        if (!this._sign.equals(other._sign)) throw new IllegalArgumentException();
+        if (this._sign.equals(Sign.negative())) return this.abs().modForDigit(other.abs()).signReversed();
+
+        Number remainder = this;
+        for (int i = 0; i < 10; i++) {
+            if (remainder.compareTo(other) < 0) return remainder;
             remainder = remainder.sub(other);
         }
         throw new IllegalArgumentException();

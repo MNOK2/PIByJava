@@ -28,39 +28,36 @@ class Digit implements Comparable<Digit> {
         return Byte.toString(this._value);
     }
 
-    public WithCarry add(Digit other, int carry) {
+    public Digit add(Digit other, int carry) {
         int sum = this._value + other._value + carry;
         int rem = sum % 10;
-        return new WithCarry(new Digit(rem < 0 ? rem + 10 : rem), (sum < 0 ? sum - 9 : sum) / 10);
+        return new Digit(rem < 0 ? rem + 10 : rem);
     }
 
-    public WithCarry sub(Digit other, int carry) {
+    public Digit sub(Digit other, int carry) {
         int diff = this._value - other._value + carry;
         int rem = diff % 10;
-        return new WithCarry(new Digit(rem < 0 ? rem + 10 : rem), (diff < 0 ? diff - 9 : diff) / 10);
+        return new Digit(rem < 0 ? rem + 10 : rem);
     }
 
-    public WithCarry mul(Digit other, int carry) {
+    public Digit mul(Digit other, int carry) {
         int pro = this._value * other._value + carry;
         int rem = pro % 10;
-        return new WithCarry(new Digit(rem < 0 ? rem + 10 : rem), (pro < 0 ? pro - 9 : pro) / 10);
+        return new Digit(rem < 0 ? rem + 10 : rem);
     }
 
-    public static class WithCarry {
-        private final Digit _digit;
-        private final int _carry;
+    public int addCarry(Digit other, int carry) {
+        int sum = this._value + other._value + carry;
+        return (sum < 0 ? sum - 9 : sum) / 10;
+    }
 
-        public WithCarry(Digit digit, int carry) {
-            this._digit = digit;
-            this._carry = carry;
-        }
+    public int subCarry(Digit other, int carry) {
+        int diff = this._value - other._value + carry;
+        return (diff < 0 ? diff - 9 : diff) / 10;
+    }
 
-        public Digit digit() {
-            return this._digit;
-        }
-
-        public int carry() {
-            return this._carry;
-        }
+    public int mulCarry(Digit other, int carry) {
+        int pro = this._value * other._value + carry;
+        return (pro < 0 ? pro - 9 : pro) / 10;
     }
 }
