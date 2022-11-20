@@ -227,4 +227,12 @@ public class Number implements Comparable<Number> {
         }
         throw new IllegalArgumentException();
     }
+
+    public Number incremented() {
+        return this.add(new Number(1));
+    }
+
+    public Number decremented() {
+        return this.sub(new Number(1));
+    }
 }
