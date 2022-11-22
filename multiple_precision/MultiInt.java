@@ -49,6 +49,7 @@ public class MultiInt implements Comparable<MultiInt> {
         if (this.isZero() && other.isZero()) return 0;
         if (this._sign.equals(Sign.negative()) && other._sign.equals(Sign.positive())) return -1;
         if (this._sign.equals(Sign.positive()) && other._sign.equals(Sign.negative())) return 1;
+        if (this._sign.equals(Sign.negative())) return other.abs().compareTo(this.abs());
         for (int i = DIGITS_COUNT_MAX - 1; i >= 0; i--) {
             int compareResult = this._digits[i].compareTo(other._digits[i]);
             if (compareResult != 0) return compareResult;
