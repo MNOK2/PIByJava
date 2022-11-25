@@ -3,14 +3,9 @@ import multiple_precision.*;
 
 public class App {
     public static void main(String[] args) {
-        MultiFloat multiFloat = new MultiFloat(256.512);
-        System.out.println(multiFloat.toString(100));
-
-        /*
         testCalculationOnce(6);
         System.out.println();
         testCalculationRepeating(10000, 10);
-        */
     }
 
 
